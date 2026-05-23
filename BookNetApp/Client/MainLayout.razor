@@ -1,0 +1,41 @@
+﻿@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<style>
+    .page {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        min-height: 100vh;
+        background-color: #0f0f12 !important;
+    }
+
+    main {
+        flex: 1;
+        background-color: #0f0f12 !important;
+    }
+
+    @@media (max-width: 640.98px) {
+        .sidebar {
+            position: relative !important;
+            width: 100% !important;
+            height: auto !important;
+            min-width: 0 !important;
+        }
+
+        main {
+            margin-left: 0 !important;
+        }
+    }
+</style>

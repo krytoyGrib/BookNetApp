@@ -1,0 +1,221 @@
+﻿@page "/"
+@using BookNetApp.Shared
+@using BookNetApp.Client.Services
+@using System.Security.Claims
+@inject IPostService PostService
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Navigation
+
+<PageTitle>BookNet — Лента</PageTitle>
+
+<div class="container mt-4 text-light">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            
+            <AuthorizeView>
+                <Authorized>
+                    <div class="small text-muted mb-2 text-end">Вы зашли как: <strong class="text-info">@userName</strong> (ID: @currentUserId)</div>
+
+                    <div class="card mb-5 border-0" style="border-radius: 15px; background-color: #1e1e24;">
+                        <div class="card-body p-4">
+                            <h6 class="fw-bold text-info mb-3">📝 Создать пост</h6>
+                            <textarea @bind="newPostContent" class="form-control mb-3 border-0 text-light shadow-none" rows="3"
+                                      style="border-radius: 10px; background-color: #2a2a35;" placeholder="О какой книге хотите рассказать, @userName?"></textarea>
+                            <div class="d-flex justify-content-end">
+                                <button class="btn btn-info rounded-pill px-5 fw-bold text-dark shadow-sm" @onclick="SubmitPost">Опубликовать</button>
+                            </div>
+                        </div>
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <div class="text-center py-5 rounded-4 mb-4 border border-secondary" style="background-color: #1e1e24;">
+                        <h2 class="fw-bold text-light">📚 Добро пожаловать в BookNet</h2>
+                        <p class="text-muted lead">Войдите, чтобы делиться мыслями о книгах и общаться с другими читателями.</p>
+                        <div class="mt-4">
+                            <button class="btn btn-info btn-lg rounded-pill px-5 me-2 shadow fw-bold text-dark" @onclick='() => Navigation.NavigateTo("login")'>Войти</button>
+                            <button class="btn btn-outline-light btn-lg rounded-pill px-5 fw-bold" @onclick='() => Navigation.NavigateTo("register")'>Регистрация</button>
+                        </div>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
+
+            @if (PostService.Posts == null)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-info" role="status"></div>
+                    <p class="mt-2 text-muted">Загрузка ленты...</p>
+                </div>
+            }
+            else if (PostService.Posts.Count == 0)
+            {
+                <div class="text-center py-5 text-muted rounded-4" style="background-color: #1e1e24; border: 1px dashed #3a3a45;">
+                    <p class="mb-0">В ленте пока нет записей. Будьте первым!</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var post in PostService.Posts)
+                {
+                    <div class="card mb-4 border-0" style="border-radius: 15px; background-color: #1e1e24;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex align-items-center">
+                                    <a href="profile/@post.UserId" class="text-decoration-none d-flex align-items-center">
+                                        <img src="default_avatar.png" class="rounded-circle me-3 border border-secondary" style="width:45px; height:45px; object-fit: cover;" />
+                                        <div>
+                                            <strong class="d-block text-light">@post.User?.Username</strong>
+                                            <small class="text-muted">@post.DateCreated.ToString("g")</small>
+                                        </div>
+                                    </a>
+                                </div>
+
+                                @if (post.UserId == currentUserId)
+                                {
+                                    <div class="btn-group rounded overflow-hidden">
+                                        <button class="btn btn-sm btn-dark border-secondary text-light" @onclick="() => StartEdit(post)">Ред.</button>
+                                        <button class="btn btn-sm btn-dark border-secondary text-danger" @onclick="() => DeletePost(post.Id)">Удалить</button>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (editingPostId == post.Id)
+                            {
+                                <textarea @bind="post.Content" class="form-control mb-2 text-light border-0 shadow-none" style="background-color: #2a2a35;"></textarea>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-success rounded-pill px-3 fw-bold" @onclick="() => SaveEdit(post)">Сохранить</button>
+                                    <button class="btn btn-sm btn-secondary rounded-pill px-3" @onclick="() => editingPostId = 0">Отмена</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="card-text fs-5 text-light" style="white-space: pre-wrap;">@post.Content</p>
+                            }
+
+                            <hr class="my-4 border-secondary opacity-25" />
+
+                            <div class="p-3 rounded-4" style="background-color: #17171c;">
+                                @if (post.Comments != null)
+                                {
+                                    @foreach (var comment in post.Comments)
+                                    {
+                                        <div class="d-flex mb-3">
+                                            <a href="profile/@comment.UserId">
+                                                <img src="default_avatar.png" class="rounded-circle me-2 border border-secondary" style="width:32px; height:32px; object-fit: cover;" />
+                                            </a>
+                                            <div class="p-3 rounded-4 text-light position-relative border-0 w-100" style="background-color: #2a2a35;">
+                                                <a href="profile/@comment.UserId" class="text-decoration-none fw-bold small text-info mb-1 d-block">
+                                                    @comment.User?.Username
+                                                </a>
+                                                <div class="small">@comment.Text</div>
+                                                @if (comment.UserId == currentUserId)
+                                                {
+                                                    <button class="btn btn-sm text-danger position-absolute top-0 end-0 m-1 border-0 fw-bold"
+                                                            @onclick="() => DeleteComment(comment.Id)">
+                                                        &times;
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                }
+
+                                <AuthorizeView>
+                                    <div class="input-group mt-3 rounded-pill overflow-hidden shadow-sm" style="border: 1px solid #3a3a45;">
+                                        <input type="text" class="form-control border-0 ps-3 shadow-none text-light"
+                                               style="background-color: #2a2a35;"
+                                               placeholder="Написать комментарий..."
+                                               @onchange="(e) => UpdateCommentInput(post.Id, e.Value?.ToString())"
+                                               value="@GetCommentValue(post.Id)" /> 
+                                        <button class="btn btn-info px-4 border-0 text-dark fw-bold" @onclick="() => SendComment(post.Id)">➜</button>
+                                    </div>
+                                </AuthorizeView>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private string newPostContent = "";
+    private string userName = "";
+    private int currentUserId;
+    private int editingPostId = 0;
+    
+    private Dictionary<int, string> commentInputs = new Dictionary<int, string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        await PostService.GetPosts();
+        
+        if (PostService.Posts != null)
+        {
+            foreach (var post in PostService.Posts)
+            {
+                if (!commentInputs.ContainsKey(post.Id))
+                    commentInputs[post.Id] = "";
+            }
+        }
+
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            userName = user.Identity.Name ?? "Пользователь";
+            var idClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+            if (idClaim != null) currentUserId = int.Parse(idClaim.Value);
+        }
+    }
+
+    private string GetCommentValue(int postId) => commentInputs.ContainsKey(postId) ? commentInputs[postId] : "";
+    private void UpdateCommentInput(int postId, string? val) => commentInputs[postId] = val ?? "";
+
+    private async Task SubmitPost()
+    {
+        if (string.IsNullOrWhiteSpace(newPostContent)) return;
+
+        await PostService.CreatePost(new Post { Content = newPostContent });
+        newPostContent = "";
+        await LoadData();
+    }
+
+    private void StartEdit(Post post) => editingPostId = post.Id;
+
+    private async Task SaveEdit(Post post)
+    {
+        await PostService.UpdatePost(post);
+        editingPostId = 0;
+        await LoadData();
+    }
+
+    private async Task DeletePost(int id)
+    {
+        await PostService.DeletePost(id);
+        await LoadData();
+    }
+
+    private async Task SendComment(int postId)
+    {
+        if (!commentInputs.ContainsKey(postId) || string.IsNullOrWhiteSpace(commentInputs[postId])) return;
+
+        var comment = new Comment { PostId = postId, Text = commentInputs[postId] };
+        await PostService.AddComment(comment);
+        
+        commentInputs[postId] = "";
+        await LoadData();
+    }
+
+    private async Task DeleteComment(int commentId)
+    {
+        await PostService.DeleteComment(commentId);
+        await LoadData();
+    }
+}

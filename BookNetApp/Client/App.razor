@@ -1,0 +1,41 @@
+﻿<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <Authorizing>
+                    
+                    <div class="d-flex justify-content-center align-items-center" style="height: 80vh;">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <div class="mt-2 text-muted">Проверка доступа...</div>
+                        </div>
+                    </div>
+                </Authorizing>
+                <NotAuthorized>
+                    
+                    @if (context.User.Identity?.IsAuthenticated != true)
+                    {
+                        <RedirectToLogin />
+                    }
+                    else
+                    {
+                        <div class="container mt-5">
+                            <div class="alert alert-danger">У вас нет прав для просмотра этой страницы.</div>
+                        </div>
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>404 - Не найдено</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <div class="container mt-5 text-center">
+                    <h1 class="display-1">404</h1>
+                    <p class="lead">Извините, такой страницы не существует.</p>
+                    <a href="/" class="btn btn-primary">Вернуться на главную</a>
+                </div>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

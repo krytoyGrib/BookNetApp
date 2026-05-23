@@ -1,0 +1,66 @@
+﻿@page "/login"
+@using BookNetApp.Shared
+@using BookNetApp.Client.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAuthService AuthService
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager NavigationManager
+
+<div class="container" style="max-width: 400px; margin-top: 50px;">
+    <div class="card shadow border-0">
+        <div class="card-body p-4">
+            <h3 class="text-center mb-4">Вход в BookNet</h3>
+            
+            <EditForm Model="user" OnValidSubmit="HandleLogin">
+                <DataAnnotationsValidator />
+                
+                <div class="mb-3">
+                    <label class="form-label">Имя пользователя</label>
+                    <InputText @bind-Value="user.Username" class="form-control" placeholder="Введите логин" />
+                    <ValidationMessage For="@(() => user.Username)" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Пароль</label>
+                    <InputText @bind-Value="user.Password" type="password" class="form-control" placeholder="******" />
+                    <ValidationMessage For="@(() => user.Password)" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger py-2">@errorMessage</div>
+                }
+
+                <button type="submit" class="btn btn-primary w-100 py-2">Войти</button>
+            </EditForm>
+            
+            <div class="text-center mt-3">
+                <small>Нет аккаунта? <a href="register">Зарегистрироваться</a></small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private UserLoginDto user = new UserLoginDto();
+    private string errorMessage = string.Empty;
+
+    private async Task HandleLogin()
+    {
+        var result = await AuthService.Login(user);
+        
+        if (result != "error" && result != "user_not_found" && result != "wrong_password")
+        {
+            await LocalStorage.SetItemAsync("authToken", result);
+            
+            await AuthProvider.GetAuthenticationStateAsync();
+            
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            errorMessage = "Неверный логин или пароль.";
+        }
+    }
+}

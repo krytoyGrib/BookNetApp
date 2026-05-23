@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="BookNetApp/Client/BookNetApp.Client.csproj" />
+  <Project Path="BookNetApp/Server/BookNetApp.Server.csproj" />
+  <Project Path="BookNetApp/Shared/BookNetApp.Shared.csproj" />
+</Solution>

@@ -1,0 +1,75 @@
+﻿@inject AuthenticationStateProvider AuthProvider
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="">📚 BookNet</a>
+    </div>
+</div>
+
+<div class="nav-scrollable">
+    <nav class="flex-column">
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All" style="color: white !important;">
+                <span class="oi oi-list-rich me-2"></span> Лента
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="search" style="color: white !important;">
+                <span class="oi oi-magnifying-glass me-2"></span> Поиск людей
+            </NavLink>
+        </div>
+
+        <AuthorizeView>
+            <Authorized>
+               
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="profile" style="color: white !important;">
+                        <span class="oi oi-person me-2"></span> Мой профиль
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="library" style="color: white !important;">
+                        <span class="oi oi-book me-2"></span> Библиотека
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="messages" style="color: white !important;">
+                        <span class="oi oi-envelope-closed me-2"></span> Сообщения
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3 mt-5">
+                    <button class="btn btn-link nav-link text-start w-100 border-0" @onclick="Logout" style="color: #ff8a8a !important; font-size: 0.9rem;">
+                        <span class="oi oi-account-logout me-2"></span> Выход (@context.User.Identity?.Name)
+                    </button>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="login" style="color: white !important;">
+                        <span class="oi oi-account-login me-2"></span> Вход
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="register" style="color: white !important;">
+                        <span class="oi oi-person me-2"></span> Регистрация
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+    </nav>
+</div>
+
+@code {
+    async Task Logout()
+    {
+        await LocalStorage.RemoveItemAsync("authToken");
+        await AuthProvider.GetAuthenticationStateAsync();
+        Navigation.NavigateTo("/");
+    }
+}

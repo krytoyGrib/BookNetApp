@@ -1,0 +1,173 @@
+﻿@page "/messages"
+@page "/messages/{ReceiverId:int}"
+@using BookNetApp.Shared
+@implements IDisposable
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+<div class="container mt-4 text-light">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card border-0 shadow" style="border-radius: 15px; overflow: hidden; background-color: #1e1e24;">
+                <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #2d2d37;">
+                    <h5 class="mb-0 fw-bold text-info">💬 Сообщения</h5>
+                    @if (ReceiverId > 0)
+                    {
+                        <button class="btn btn-sm btn-outline-info rounded-pill fw-bold" @onclick='() => NavigationManager.NavigateTo("/messages")'>Назад к чатам</button>
+                    }
+                </div>
+                
+                <div class="card-body custom-scroll" style="height: 450px; overflow-y: auto; background-color: #17171c;">
+                    @if (ReceiverId > 0)
+                    {
+                        @if (chatHistory == null)
+                        {
+                            <p class="text-center mt-5 text-muted">Загрузка чата...</p>
+                        }
+                        else
+                        {
+                            @foreach (var msg in chatHistory)
+                            {
+                                <div class="d-flex mb-3 @(msg.SenderId != ReceiverId ? "justify-content-end" : "")">
+                                    <div class="p-3 rounded-4 shadow-sm @(msg.SenderId != ReceiverId ? "bg-info text-dark fw-bold" : "bg-dark text-light border border-secondary")" style="max-width: 70%;">
+                                        <div>@msg.Content</div>
+                                        <div class="small opacity-75 mt-1 text-end" style="font-size: 0.7rem;">@msg.DateSent.ToString("t")</div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        @if (myChats == null)
+                        {
+                            <p class="text-center mt-5 text-muted">Загрузка ваших переписок...</p>
+                        }
+                        else if (!myChats.Any())
+                        {
+                            <div class="text-center mt-5 text-muted">
+                                <span class="oi oi-info mb-3" style="font-size: 2rem;"></span>
+                                <p>У вас пока нет активных диалогов. Выберите пользователя в его профиле, чтобы начать общение.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="list-group list-group-flush bg-transparent">
+                                @foreach (var chat in myChats)
+                                {
+                                    <button class="list-group-item list-group-item-action border-0 mb-2 shadow-sm rounded-4 text-light p-3"
+                                            style="background-color: #2a2a35;"
+                                            @onclick="() => OpenChat(chat.UserId)">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-1 fw-bold text-info">@chat.UserName</h6>
+                                        </div>
+                                        <p class="mb-0 text-muted small text-truncate">@chat.LastMessage</p>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+
+                @if (ReceiverId > 0)
+                {
+                    <div class="card-footer p-3 border-0" style="background-color: #1e1e24;">
+                        <div class="input-group rounded-pill p-1" style="background-color: #2a2a35; border: 1px solid #3a3a45;">
+                            <input type="text" class="form-control border-0 bg-transparent text-light shadow-none ps-3"
+                                   @bind="newMessageContent" placeholder="Напишите сообщение..." @onkeyup="HandleKeyUp" />
+                            <button class="btn btn-info rounded-pill px-4 fw-bold text-dark" @onclick="Send">Отправить</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int ReceiverId { get; set; }
+    private List<Message>? chatHistory;
+    private List<ChatSummaryDto>? myChats;
+    private string newMessageContent = "";
+    private System.Threading.Timer? timer;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        StopTimer();
+        
+        if (ReceiverId > 0)
+        {
+            await LoadChat();
+            StartTimer();
+        }
+        else
+        {
+            await LoadMyChats();
+        }
+    }
+
+    private void StartTimer()
+    {
+        timer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadChat();
+                StateHasChanged();
+            });
+        }, null, 3000, 3000);
+    }
+
+    private void StopTimer()
+    {
+        timer?.Dispose();
+    }
+
+    public void Dispose()
+    {
+        StopTimer();
+    }
+
+    private async Task LoadChat()
+    {
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<Message>>($"api/message/{ReceiverId}");
+            if (result != null) chatHistory = result;
+        }
+        catch { }
+    }
+
+    private async Task LoadMyChats()
+    {
+        try
+        {
+            myChats = await Http.GetFromJsonAsync<List<ChatSummaryDto>>("api/message/chats");
+        }
+        catch { }
+    }
+
+    private void OpenChat(int userId)
+    {
+        NavigationManager.NavigateTo($"/messages/{userId}");
+    }
+
+    private async Task Send()
+    {
+        if (string.IsNullOrWhiteSpace(newMessageContent)) return;
+        
+        var response = await Http.PostAsJsonAsync("api/message", new Message { ReceiverId = ReceiverId, Content = newMessageContent });
+        
+        if (response.IsSuccessStatusCode)
+        {
+            newMessageContent = "";
+            await LoadChat();
+        }
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await Send();
+    }
+}лл

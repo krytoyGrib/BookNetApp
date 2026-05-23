@@ -1,0 +1,64 @@
+﻿@page "/search"
+@using BookNetApp.Shared
+@inject HttpClient Http
+
+<PageTitle>BookNet — Поиск единомышленников</PageTitle>
+
+<div class="container mt-4 text-light">
+    <div class="card p-4 border-0 shadow mb-4" style="background-color: #16161a;">
+        <h4 class="fw-bold text-info mb-3">🔍 Поиск людей</h4>
+        <div class="input-group">
+            <input type="text" class="form-control bg-dark text-light border-secondary ps-3"
+                   @bind="searchQuery" @bind:event="oninput" @onkeyup="ExecuteSearch" placeholder="Введите имя пользователя для поиска..." />
+        </div>
+    </div>
+
+    <h5 class="fw-bold text-secondary text-uppercase small mb-3">
+        @(string.IsNullOrWhiteSpace(searchQuery) ? "💡 Рекомендуем вам (общие книги):" : "🎯 Результаты поиска:")
+    </h5>
+
+    <div class="row">
+        @if (users == null)
+        {
+            <p class="text-muted">Загрузка рекомендаций...</p>
+        }
+        else if (!users.Any())
+        {
+            <p class="text-muted">Никого не найдено. Добавьте больше книг в библиотеку, чтобы улучшить рекомендации!</p>
+        }
+        else
+        {
+            @foreach (var u in users)
+            {
+                <div class="col-md-6 mb-3">
+                    <div class="p-3 rounded-4 d-flex align-items-center justify-content-between" style="background-color: #1c1c22; border: 1px solid #24242b;">
+                        <div class="d-flex align-items-center gap-3 overflow-hidden">
+                            <img src="@(string.IsNullOrEmpty(u.AvatarUrl) ? "default_avatar.png" : u.AvatarUrl)"
+                                 class="rounded-circle border border-secondary" style="width: 50px; height: 50px; object-fit: cover;" onerror="this.src='default_avatar.png';" />
+                            <div class="overflow-hidden">
+                                <a href="profile/@u.Id" class="fw-bold text-info text-decoration-none d-block text-truncate">@u.Username</a>
+                                <small class="text-muted text-truncate d-block" style="font-size: 0.8rem;">@u.Bio</small>
+                            </div>
+                        </div>
+                        <a href="messages/@u.Id" class="btn btn-sm btn-outline-info rounded-pill px-3 fw-bold ms-2">💬 Чат</a>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private string searchQuery = "";
+    private List<User>? users;
+
+    protected override async Task OnInitializedAsync() => await GetPeople();
+
+    private async Task ExecuteSearch(KeyboardEventArgs e) => await GetPeople();
+
+    private async Task GetPeople()
+    {
+        string sendQuery = string.IsNullOrWhiteSpace(searchQuery) ? "null" : searchQuery;
+        users = await Http.GetFromJsonAsync<List<User>>($"api/auth/search/{sendQuery}");
+    }
+}
