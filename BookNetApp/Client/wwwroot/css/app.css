@@ -224,3 +224,55 @@ input, textarea, select, .form-control {
     ::-webkit-scrollbar-thumb:hover {
         background: #388bfd;
     }
+#blazor-error-ui, .blazor-error-boundary {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    opacity: 0 !important;
+}
+
+.modal-backdrop-custom {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(10, 10, 12, 0.7);
+    backdrop-filter: blur(8px); 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+}
+
+.btn-close-custom {
+    background: transparent;
+    border: 0;
+    color: #8b949e;
+    font-size: 1.75rem;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+    .btn-close-custom:hover {
+        color: #ff453a;
+    }
+
+.animate-modal {
+    animation: scaleUp 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes scaleUp {
+    from {
+        transform: scale(0.92);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

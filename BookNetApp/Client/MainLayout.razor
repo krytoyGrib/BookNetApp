@@ -2,6 +2,11 @@
 
 <div class="page">
     <div class="sidebar">
+        
+        <div class="sidebar-logo-container">
+            <span style="font-size: 1.5rem;">📚</span>
+        </div>
+        
         <NavMenu />
     </div>
 
@@ -26,16 +31,27 @@
         background-color: #0f0f12 !important;
     }
 
+    #blazor-error-ui {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+    }
+
     @@media (max-width: 640.98px) {
         .sidebar {
             position: relative !important;
             width: 100% !important;
             height: auto !important;
             min-width: 0 !important;
+            top: 0 !important;
+            left: 0 !important;
+            border-radius: 0 !important;
         }
 
         main {
             margin-left: 0 !important;
+            padding-left: 15px !important;
         }
     }
 </style>

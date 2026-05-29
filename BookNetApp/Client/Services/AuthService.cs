@@ -49,18 +49,22 @@ namespace BookNetApp.Client.Services
         public async Task<string> Login(UserLoginDto request)
         {
             var response = await _http.PostAsJsonAsync("api/auth/login", request);
+
             if (response.IsSuccessStatusCode)
             {
-                var tokenFromServer = await response.Content.ReadAsStringAsync();
-                tokenFromServer = tokenFromServer.Trim('"');
+                var token = await response.Content.ReadAsStringAsync();
 
-                await _localStorage.SetItemAsync("authToken", tokenFromServer);
+                token = token.Trim('"');
 
+                await _localStorage.SetItemAsync("authToken", token);
                 await _authStateProvider.GetAuthenticationStateAsync();
+
                 return "success";
             }
+
             return "error";
-        }   
+        }
+
 
 
 
